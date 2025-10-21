@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # ---------------------------
+  # Mailhog for email testing
+  # ---------------------------
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+
+  # ---------------------------
+  # Catalog Service
+  # ---------------------------
+  catalog:
+    build: ./catalog-service
+    container_name: catalog
+    depends_on:
+      - mailhog
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: host.docker.internal
+      DB_PORT: 3306
+      DB_DATABASE: catalog_db
+      DB_USERNAME: root
+      DB_PASSWORD: localhost
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./catalog-service:/var/www
+
+  # ---------------------------
+  # Checkout Service
+  # ---------------------------
+  checkout:
+    build: ./checkout-service
+    container_name: checkout
+    depends_on:
+      - catalog
+      - mailhog
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: host.docker.internal
+      DB_PORT: 3306
+      DB_DATABASE: checkout_db
+      DB_USERNAME: root
+      DB_PASSWORD: localhost
+      CATALOG_URL: http://catalog-service.test
+      EMAIL_URL: http://email-service.test
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./checkout-service:/var/www
+
+  # ---------------------------
+  # Email Service
+  # ---------------------------
+  email:
+    build: ./email-service
+    container_name: email
+    depends_on:
+      - mailhog
+    environment:
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: no-reply@ecommerce.test
+      MAIL_FROM_NAME: Ecommerce
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./email-service:/var/www
