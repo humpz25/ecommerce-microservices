@@ -63,6 +63,7 @@ services:
       - "8001:8000"
     volumes:
       - ./catalog-service:/var/www
+    entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
 
   # ---------------------------
   # Checkout Service
@@ -89,6 +90,7 @@ services:
       - "8002:8000"
     volumes:
       - ./checkout-service:/var/www
+    entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
 
   # ---------------------------
   # Email Service
@@ -108,6 +110,7 @@ services:
       - "8003:8000"
     volumes:
       - ./email-service:/var/www
+    entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
 
  # ---------------------------
   # Frontend (Vue 3 + TypeScript + Vite)
