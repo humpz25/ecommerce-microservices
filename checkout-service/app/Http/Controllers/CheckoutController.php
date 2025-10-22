@@ -49,15 +49,30 @@ class CheckoutController extends Controller
             $order->items()->create($item);
         }
 
+        // Prepare order array for email
+        $orderArray = [
+            'id' => $order->id,
+            'user_email' => $order->user_email,
+            'total_amount' => $order->total_amount,
+            'items' => $order->items->map(function($item) {
+                return [
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product_name,
+                    'price' => $item->price,
+                    'quantity' => $item->quantity,
+                ];
+            })->toArray(),
+        ];
+
         // Send order summary to email service
         Http::post(env('EMAIL_URL') . '/send-order-summary', [
             'user_email' => $data['user_email'],
-            'order' => $order->load('items'),
+            'order' => $orderArray,
         ]);
 
         return response()->json([
             'message' => 'Order placed successfully!',
-            'order' => $order->load('items'),
+            'order' => $orderArray,
         ]);
     }
 }
