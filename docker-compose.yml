@@ -2,14 +2,14 @@ version: '3.8'
 
 services:
   # ---------------------------
-  # Mailhog for email testing
+  # Mailhog
   # ---------------------------
   mailhog:
     image: mailhog/mailhog
     container_name: mailhog
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
+      - "1025:1025"
+      - "8025:8025"
 
   # ---------------------------
   # Catalog Database
@@ -108,6 +108,30 @@ services:
       - "8003:8000"
     volumes:
       - ./email-service:/var/www
+
+ # ---------------------------
+  # Frontend (Vue 3 + TypeScript + Vite)
+  # ---------------------------
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    working_dir: /usr/src/app
+    depends_on:
+      - catalog
+      - checkout
+    environment:
+      VITE_API_CATALOG: http://localhost:8001/api/products
+      VITE_API_CHECKOUT: http://localhost:8002/api/checkout
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      NODE_ENV: development
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules  # prevent overwriting container node_modules
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 volumes:
   catalog_db_data:
