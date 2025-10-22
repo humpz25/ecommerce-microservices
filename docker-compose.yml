@@ -12,20 +12,53 @@ services:
       - "8025:8025"   # Web UI
 
   # ---------------------------
+  # Catalog Database
+  # ---------------------------
+  catalog_db:
+    image: mysql:8.0
+    container_name: catalog_db
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: catalog
+      MYSQL_USER: app
+      MYSQL_PASSWORD: secret
+    ports:
+      - "33061:3306"
+    volumes:
+      - catalog_db_data:/var/lib/mysql
+
+  # ---------------------------
+  # Checkout Database
+  # ---------------------------
+  checkout_db:
+    image: mysql:8.0
+    container_name: checkout_db
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: checkout
+      MYSQL_USER: app
+      MYSQL_PASSWORD: secret
+    ports:
+      - "33062:3306"
+    volumes:
+      - checkout_db_data:/var/lib/mysql
+
+  # ---------------------------
   # Catalog Service
   # ---------------------------
   catalog:
     build: ./catalog-service
     container_name: catalog
     depends_on:
+      - catalog_db
       - mailhog
     environment:
       DB_CONNECTION: mysql
-      DB_HOST: host.docker.internal
+      DB_HOST: catalog_db
       DB_PORT: 3306
-      DB_DATABASE: catalog_db
-      DB_USERNAME: root
-      DB_PASSWORD: localhost
+      DB_DATABASE: catalog
+      DB_USERNAME: app
+      DB_PASSWORD: secret
     ports:
       - "8001:8000"
     volumes:
@@ -38,17 +71,20 @@ services:
     build: ./checkout-service
     container_name: checkout
     depends_on:
+      - checkout_db
       - catalog
       - mailhog
     environment:
       DB_CONNECTION: mysql
-      DB_HOST: host.docker.internal
+      DB_HOST: checkout_db
       DB_PORT: 3306
-      DB_DATABASE: checkout_db
-      DB_USERNAME: root
-      DB_PASSWORD: localhost
-      CATALOG_URL: http://catalog-service.test
-      EMAIL_URL: http://email-service.test
+      DB_DATABASE: checkout
+      DB_USERNAME: app
+      DB_PASSWORD: secret
+      CATALOG_URL: http://catalog:8000/api/products
+      EMAIL_URL: http://email:8000/api/send-order-summary
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
     ports:
       - "8002:8000"
     volumes:
@@ -72,3 +108,7 @@ services:
       - "8003:8000"
     volumes:
       - ./email-service:/var/www
+
+volumes:
+  catalog_db_data:
+  checkout_db_data:
