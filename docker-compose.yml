@@ -26,6 +26,11 @@ services:
       - "33061:3306"
     volumes:
       - catalog_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
 
   # ---------------------------
   # Checkout Database
@@ -42,6 +47,11 @@ services:
       - "33062:3306"
     volumes:
       - checkout_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
 
   # ---------------------------
   # Catalog Service
@@ -50,8 +60,10 @@ services:
     build: ./catalog-service
     container_name: catalog
     depends_on:
-      - catalog_db
-      - mailhog
+      catalog_db:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
     environment:
       DB_CONNECTION: mysql
       DB_HOST: catalog_db
@@ -61,8 +73,6 @@ services:
       DB_PASSWORD: secret
     ports:
       - "8001:8000"
-    # volumes:
-    #   - ./catalog-service:/var/www
     entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
 
   # ---------------------------
@@ -72,9 +82,12 @@ services:
     build: ./checkout-service
     container_name: checkout
     depends_on:
-      - checkout_db
-      - catalog
-      - mailhog
+      checkout_db:
+        condition: service_healthy
+      catalog:
+        condition: service_started
+      mailhog:
+        condition: service_started
     environment:
       DB_CONNECTION: mysql
       DB_HOST: checkout_db
@@ -88,8 +101,6 @@ services:
       MAIL_PORT: 1025
     ports:
       - "8002:8000"
-    volumes:
-      - ./checkout-service:/var/www
     entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
 
   # ---------------------------
@@ -99,7 +110,8 @@ services:
     build: ./email-service
     container_name: email
     depends_on:
-      - mailhog
+      mailhog:
+        condition: service_started
     environment:
       MAIL_MAILER: smtp
       MAIL_HOST: mailhog
@@ -108,11 +120,9 @@ services:
       MAIL_FROM_NAME: Ecommerce
     ports:
       - "8003:8000"
-    volumes:
-      - ./email-service:/var/www
     entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
 
- # ---------------------------
+  # ---------------------------
   # Frontend (Vue 3 + TypeScript + Vite)
   # ---------------------------
   frontend:
@@ -121,11 +131,13 @@ services:
     container_name: frontend
     working_dir: /usr/src/app
     depends_on:
-      - catalog
-      - checkout
+      catalog:
+        condition: service_started
+      checkout:
+        condition: service_started
     environment:
-      VITE_API_CATALOG: http://localhost:8001/api/products
-      VITE_API_CHECKOUT: http://localhost:8002/api/checkout
+      VITE_API_CATALOG: http://catalog:8000/api/products
+      VITE_API_CHECKOUT: http://checkout:8000/api/checkout
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
       NODE_ENV: development
@@ -133,7 +145,7 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/usr/src/app
-      - /usr/src/app/node_modules  # prevent overwriting container node_modules
+      - /usr/src/app/node_modules
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 volumes:
