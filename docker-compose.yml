@@ -136,17 +136,31 @@ services:
       checkout:
         condition: service_started
     environment:
-      VITE_API_CATALOG: http://catalog:8000/api/products
-      VITE_API_CHECKOUT: http://checkout:8000/api/checkout
+      VITE_API_CATALOG: /api/products
+      VITE_API_CHECKOUT: /api/checkout
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
       NODE_ENV: development
-    ports:
-      - "5173:5173"
     volumes:
       - ./frontend:/usr/src/app
       - /usr/src/app/node_modules
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+  # ---------------------------
+  # Nginx Proxy
+  # ---------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    depends_on:
+      - frontend
+      - catalog
+      - checkout
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
 
 volumes:
   catalog_db_data:
