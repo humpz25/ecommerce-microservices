@@ -95,8 +95,8 @@ services:
       DB_DATABASE: checkout
       DB_USERNAME: app
       DB_PASSWORD: secret
-      CATALOG_URL: http://catalog:8000/api/products
-      EMAIL_URL: http://email:8000/api/send-order-summary
+      CATALOG_URL: http://catalog:8000/api
+      EMAIL_URL: http://email:8000/api
       MAIL_HOST: mailhog
       MAIL_PORT: 1025
     ports:
