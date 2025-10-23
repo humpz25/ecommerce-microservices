@@ -1,10 +1,10 @@
 FROM php:8.2-fpm-alpine
 
 # Install system dependencies
-RUN apk add --no-cache bash icu-dev oniguruma-dev libzip-dev zip unzip libxml2-dev
+RUN apk add --no-cache bash icu-dev oniguruma-dev libzip-dev zip unzip libxml2-dev libxslt-dev
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql mbstring intl xml
+RUN docker-php-ext-install pdo pdo_mysql mbstring intl xml xsl
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
