@@ -1,13 +1,18 @@
 FROM php:8.2-fpm-alpine
 
-RUN apk add --no-cache oniguruma-dev libzip-dev zip unzip bash icu-dev
-RUN docker-php-ext-install pdo pdo_mysql mbstring intl
+# Install system dependencies
+RUN apk add --no-cache bash icu-dev oniguruma-dev libzip-dev zip unzip libxml2-dev libxslt-dev
 
+# Install PHP extensions
+RUN docker-php-ext-install pdo pdo_mysql mbstring intl xml xsl
+
+# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 COPY . .
 
+# Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Copy entrypoint
