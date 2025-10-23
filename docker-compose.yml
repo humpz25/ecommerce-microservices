@@ -61,8 +61,8 @@ services:
       DB_PASSWORD: secret
     ports:
       - "8001:8000"
-    volumes:
-      - ./catalog-service:/var/www
+    # volumes:
+    #   - ./catalog-service:/var/www
     entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
 
   # ---------------------------
