@@ -1,49 +1,21 @@
 FROM php:8.2-fpm-alpine
 
-# -------------------------
 # Install system dependencies
-# -------------------------
-RUN apk add --no-cache \
-    bash \
-    git \
-    zip \
-    unzip \
-    icu-dev \
-    libzip-dev \
-    oniguruma-dev \
-    autoconf \
-    g++ \
-    make \
-    zlib-dev
+RUN apk add --no-cache bash icu-dev oniguruma-dev libzip-dev zip unzip libxml2-dev
 
-# -------------------------
 # Install PHP extensions
-# -------------------------
-RUN docker-php-ext-install pdo pdo_mysql mbstring intl zip
+RUN docker-php-ext-install pdo pdo_mysql mbstring intl xml
 
-# -------------------------
-# Install Composer globally
-# -------------------------
+# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# -------------------------
-# Set working directory
-# -------------------------
 WORKDIR /var/www
-
-# -------------------------
-# Copy project files
-# -------------------------
 COPY . .
 
-# -------------------------
-# Install PHP dependencies
-# -------------------------
+# Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# -------------------------
-# Entrypoint
-# -------------------------
+# Copy entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
